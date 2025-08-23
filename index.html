@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> مجموعة الألعاب المميزة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+    <script type="module" src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"></script>
+    <!-- moved to styles.css
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --darker: #111827;
+            --light: #f3f4f6;
+            --text: #374151;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            --neon-glow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--gradient-bg);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundMove 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundMove {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.3)); }
+            to { filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6)); }
+        }
+
+        .home-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .home-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .home-btn:hover::before {
+            left: 100%;
+        }
+
+        .home-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Main Content */
+        .main {
+            padding: 2rem 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Welcome Section */
+        .welcome {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .welcome h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: slideInDown 1s ease-out;
+        }
+
+        .welcome p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            animation: slideInUp 1s ease-out 0.3s both;
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Games Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .game-card {
+            background: var(--gradient-card);
+            border-radius: 25px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+            border: 2px solid transparent;
+            cursor: pointer;
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        .game-card:hover {
+            transform: translateY(-15px) scale(1.03);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            border-color: var(--primary);
+        }
+
+        .game-card.featured {
+            border: 3px solid var(--secondary);
+            background: linear-gradient(145deg, #fef3c7 0%, #fde68a 100%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .game-card.featured::before {
+            content: "⭐ مميزة";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--secondary);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            z-index: 2;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .game-image {
+            position: relative;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .game-icon {
+            font-size: 5rem;
+            z-index: 2;
+            filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.4));
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-8px); }
+        }
+
+        .game-preview {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            opacity: 0.7;
+        }
+
+        .game-preview > div {
+            font-size: 2rem;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .game-preview > div:nth-child(2) {
+            animation-delay: -1s;
+        }
+
+        .game-preview > div:nth-child(3) {
+            animation-delay: -2s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-12px) rotate(5deg); }
+            66% { transform: translateY(-8px) rotate(-3deg); }
+        }
+
+        /* Game Preview Components */
+        .puzzle-tiles, .ttt-grid, .memory-cards {
+            display: grid;
+            gap: 3px;
+            padding: 5px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .puzzle-tiles { grid-template-columns: repeat(3, 1fr); }
+        .ttt-grid { grid-template-columns: repeat(3, 1fr); }
+        .memory-cards { grid-template-columns: repeat(2, 1fr); }
+
+        .puzzle-tiles span, .ttt-grid span, .memory-cards .card {
+            background: rgba(255,255,255,0.9);
+            padding: 6px;
+            text-align: center;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--dark);
+            min-height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tile {
+            background: rgba(255,255,255,0.95);
+            padding: 8px;
+            margin: 3px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: var(--dark);
+            min-width: 35px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-info {
+            padding: 2rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.95) 100%);
+        }
+
+        .game-info h3 {
+            font-size: 1.7rem;
+            color: var(--dark);
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-info p {
+            color: var(--text-light);
+            margin-bottom: 1.2rem;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .difficulty {
+            padding: 0.4rem 1rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .difficulty.easy { background: #dcfce7; color: #166534; }
+        .difficulty.medium { background: #fef3c7; color: #92400e; }
+        .difficulty.hard { background: #fecaca; color: #991b1b; }
+
+        .rating {
+            color: var(--secondary);
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .play-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .play-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        .play-btn:hover::before {
+            left: 100%;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Game Sections */
+        .game-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .game-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-controls > div {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            font-weight: 700;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.3);
+            font-size: 1.1rem;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, var(--secondary), #d97706);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(217, 119, 6, 0.3);
+        }
+
+        /* Canvas Styles */
+        canvas {
+            display: block;
+            margin: 2rem auto;
+            border: 4px solid var(--primary);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            background: #000;
+        }
+
+        /* Game Boards */
+        .puzzle-board, .tictactoe-board, .memory-board, .game2048-board, .word-board {
+            margin: 2rem auto;
+            padding: 25px;
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            border: 3px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-width: 450px;
+        }
+
+        .puzzle-tile {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .puzzle-tile:hover:not(.empty) {
+            transform: scale(1.08);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .puzzle-tile.empty {
+            background: transparent;
+            box-shadow: inset 0 0 0 2px rgba(99, 102, 241, 0.3);
+        }
+
+        .tictactoe-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 350px;
+        }
+
+        .tictactoe-cell {
+            aspect-ratio: 1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            border: 3px solid transparent;
+        }
+
+        .tictactoe-cell:hover:not(:disabled) {
+            background: var(--light);
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .tictactoe-cell:disabled {
+            cursor: not-allowed;
+        }
+
+        .memory-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            max-width: 550px;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.6s ease;
+            transform-style: preserve-3d;
+            box-shadow: var(--shadow);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .memory-card.flipped {
+            background: white;
+            transform: rotateY(180deg);
+            color: var(--dark);
+            border-color: var(--primary);
+        }
+
+        .memory-card.matched {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            cursor: default;
+            transform: scale(1.1);
+            animation: matchedPulse 1s ease-in-out;
+        }
+
+        @keyframes matchedPulse {
+            0%, 100% { transform: scale(1.1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* New Games Styles */
+        .word-board {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .word-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 2rem 0;
+            color: var(--primary);
+            letter-spacing: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .alphabet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 10px;
+            margin: 2rem 0;
+        }
+
+        .letter-btn {
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .letter-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: var(--shadow);
+        }
+
+        .letter-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            transform: scale(0.95);
+        }
+
+        .hangman-drawing {
+            font-size: 4rem;
+            margin: 2rem 0;
+            font-family: monospace;
+            line-height: 1.2;
+            color: var(--danger);
+        }
+
+        .math-problem {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 2rem 0;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .math-input {
+            font-size: 2rem;
+            padding: 1rem;
+            border: 3px solid var(--primary);
+            border-radius: 15px;
+            text-align: center;
+            width: 200px;
+            margin: 1rem;
+        }
+
+        .math-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+
+        .math-option {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .math-option:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+
+        .math-option.correct {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .math-option.wrong {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+        }
+
+        /* Game Instructions */
+        .game-instructions {
+            text-align: center;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            color: var(--text);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            border-radius: 15px;
+            margin: 2rem;
+            border: 2px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .game-instructions strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .game-result {
+            text-align: center;
+            padding: 1.5rem;
+            margin: 1rem auto;
+            border-radius: 15px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            max-width: 400px;
+            box-shadow: var(--shadow);
+        }
+
+        .game-result.win {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .game-result.draw {
+            background: linear-gradient(135deg, var(--secondary), #d97706);
+            color: white;
+        }
+
+        .game-result.lose {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        /* Footer */
+        .footer {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(31, 41, 55, 0.9));
+            color: white;
+            text-align: center;
+            padding: 3rem 0;
+            margin-top: 4rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .footer p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            
+            .welcome h2 {
+                font-size: 2.2rem;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .game-controls {
+                gap: 1rem;
+                flex-direction: column;
+            }
+            
+            canvas {
+                max-width: 95%;
+                height: auto;
+            }
+            
+            .puzzle-board, .tictactoe-board, .memory-board, .game2048-board, .word-board {
+                max-width: 95%;
+                padding: 20px;
+            }
+
+            .game-icon {
+                font-size: 4rem;
+            }
+
+            .game-info h3 {
+                font-size: 1.5rem;
+            }
+
+            .math-problem {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .memory-board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .word-display {
+                font-size: 1.8rem;
+                letter-spacing: 0.3rem;
+            }
+
+            .alphabet-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 8px;
+            }
+
+            .letter-btn {
+                padding: 0.8rem 0.5rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* Enhanced Animations */
+        .card-flip {
+            animation: cardFlip 0.6s ease-in-out;
+        }
+
+        @keyframes cardFlip {
+            0% { transform: rotateY(0); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0); }
+        }
+
+        .score-popup {
+            position: absolute;
+            color: var(--success);
+            font-size: 2rem;
+            font-weight: 700;
+            animation: scorePopup 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes scorePopup {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+
+        /* Loading states */
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    -->
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1><span id="siteLogoIcon" class="logo-icon" aria-hidden="true"><svg class="gamepad" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gamepad icon">
+  <defs>
+    <linearGradient id="gp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <g class="pad" fill="url(#gp)" stroke="rgba(0,0,0,0.2)" stroke-width="1.5">
+    <path d="M14 30c-6 0-10 5-10 10 0 5 4 9 9 9 4 0 7-2 10-5h18c3 3 6 5 10 5 5 0 9-4 9-9 0-5-4-10-10-10l-5.5-7.5c-2-2.7-5-4.5-9.5-4.5s-7.5 1.8-9.5 4.5L24 30z"/>
+  </g>
+  <g class="dpad" fill="#111827">
+    <rect x="18" y="34" width="8" height="8" rx="1"/>
+    <rect x="21" y="31" width="2" height="14" rx="1"/>
+    <rect x="16" y="36" width="14" height="2" rx="1"/>
+  </g>
+  <g class="buttons" fill="#ffffff">
+    <circle cx="46" cy="34" r="2.3"/>
+    <circle cx="50" cy="38" r="2.3"/>
+    <circle cx="42" cy="38" r="2.3"/>
+    <circle cx="46" cy="42" r="2.3"/>
+  </g>
+  <g class="stick" fill="#0ea5e9">
+    <circle cx="28" cy="42" r="2.3"/>
+  </g>
+</svg></span> مجموعة الألعاب المميزة</h1>
+            <div class="header-controls">
+                <button id="themeToggle" class="theme-btn">🌙 الوضع الليلي</button>
+                <button id="homeBtn" class="home-btn hidden">🏠 الرئيسية</button>
+            </div>
+            <!-- قطة أعلى العنوان -->
+            <div id="cat" class="cat-wrapper" aria-hidden="true">
+                <dotlottie-player id="catLottie" src="Cat Movement.lottie" autoplay loop speed="1" renderer="svg" background="transparent"></dotlottie-player>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- الصفحة الرئيسية -->
+        <section id="home" class="section active">
+            <div class="container">
+                <div class="welcome">
+                    <h2>مرحباً بك في عالم الألعاب الرائع!</h2>
+                    <p>اكتشف مجموعة متنوعة من الألعاب المسلية والتحدي المثير</p>
+                </div>
+                
+                <div class="games-grid">
+                    <!-- لعبة الفضاء -->
+                    <div class="game-card featured" data-game="space">
+                        <div class="game-image">
+                            <div class="game-icon">🚀</div>
+                            <div class="game-preview">
+                                <div class="stars">⭐⭐⭐</div>
+                                <div class="spaceship">🛸</div>
+                                <div class="laser">💥</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>معركة الفضاء</h3>
+                            <p>احمِ الأرض من الغزاة الفضائيين في معركة ملحمية!</p>
+                            <div class="game-stats">
+                                <span class="difficulty hard">صعب</span>
+                                <span class="rating">⭐ 4.8</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة الكلمات المشنوقة -->
+                    <div class="game-card" data-game="hangman">
+                        <div class="game-image">
+                            <div class="game-icon">🎯</div>
+                            <div class="game-preview">
+                                <div class="word-letters">أ _ _ ب</div>
+                                <div class="hangman">🎪</div>
+                                <div class="letters">أبجد</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>الكلمة المفقودة</h3>
+                            <p>اكتشف الكلمة السرية قبل أن ينتهي الوقت!</p>
+                            <div class="game-stats">
+                                <span class="difficulty medium">متوسط</span>
+                                <span class="rating">⭐ 4.6</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة الرياضيات -->
+                    <div class="game-card" data-game="math">
+                        <div class="game-image">
+                            <div class="game-icon">🧮</div>
+                            <div class="game-preview">
+                                <div class="equation">2+2=?</div>
+                                <div class="numbers">1234</div>
+                                <div class="calculator">➕➖✖️➗</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>تحدي الرياضيات</h3>
+                            <p>اختبر مهاراتك في الحساب والرياضيات!</p>
+                            <div class="game-stats">
+                                <span class="difficulty easy">سهل</span>
+                                <span class="rating">⭐ 4.7</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة Flappy Bird -->
+                    <div class="game-card" data-game="flappy">
+                        <div class="game-image">
+                            <div class="game-icon">🐦</div>
+                            <div class="game-preview">
+                                <div class="bird">🐤</div>
+                                <div class="pipes">🟫🟫</div>
+                                <div class="clouds">☁️☁️</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>الطائر المحلق</h3>
+                            <p>طر عبر الأنابيب دون اصطدام في رحلة مثيرة!</p>
+                            <div class="game-stats">
+                                <span class="difficulty hard">صعب</span>
+                                <span class="rating">⭐ 4.5</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة 2048 -->
+                    <div class="game-card" data-game="game2048">
+                        <div class="game-image">
+                            <div class="game-icon">🔢</div>
+                            <div class="game-preview">
+                                <div class="tile">2</div>
+                                <div class="tile">4</div>
+                                <div class="tile">8</div>
+                                <div class="tile">16</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>لعبة 2048</h3>
+                            <p>ادمج الأرقام للوصول إلى 2048 في تحدي ذهني!</p>
+                            <div class="game-stats">
+                                <span class="difficulty medium">متوسط</span>
+                                <span class="rating">⭐ 4.7</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة الأحجية المنزلقة -->
+                    <div class="game-card" data-game="puzzle">
+                        <div class="game-image">
+                            <div class="game-icon">🧩</div>
+                            <div class="game-preview">
+                                <div class="puzzle-tiles">
+                                    <span>1</span><span>2</span><span>3</span>
+                                    <span>4</span><span>5</span><span>6</span>
+                                    <span>7</span><span>8</span><span class="empty"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>الأحجية المنزلقة</h3>
+                            <p>رتب الأرقام في المكان الصحيح لحل اللغز!</p>
+                            <div class="game-stats">
+                                <span class="difficulty medium">متوسط</span>
+                                <span class="rating">⭐ 4.2</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة XO -->
+                    <div class="game-card" data-game="tictactoe">
+                        <div class="game-image">
+                            <div class="game-icon">⭕</div>
+                            <div class="game-preview">
+                                <div class="ttt-grid">
+                                    <span>X</span><span>O</span><span>X</span>
+                                    <span>O</span><span>X</span><span>O</span>
+                                    <span></span><span></span><span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>لعبة XO الكلاسيكية</h3>
+                            <p>لعبة كلاسيكية للاعبين في تحدي استراتيجي!</p>
+                            <div class="game-stats">
+                                <span class="difficulty easy">سهل</span>
+                                <span class="rating">⭐ 4.0</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة الثعبان -->
+                    <div class="game-card" data-game="snake">
+                        <div class="game-image">
+                            <div class="game-icon">🐍</div>
+                            <div class="game-preview">
+                                <div class="snake-body">🟢🟢🟢</div>
+                                <div class="apple">🍎</div>
+                                <div class="grass">🟫</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>مغامرة الثعبان</h3>
+                            <p>اجمع الطعام ولا تصطدم في رحلة لا تنتهي!</p>
+                            <div class="game-stats">
+                                <span class="difficulty medium">متوسط</span>
+                                <span class="rating">⭐ 4.6</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة الذاكرة -->
+                    <div class="game-card" data-game="memory">
+                        <div class="game-image">
+                            <div class="game-icon">🧠</div>
+                            <div class="game-preview">
+                                <div class="memory-cards">
+                                    <span class="card">🎭</span><span class="card">🎨</span>
+                                    <span class="card">🎪</span><span class="card">🎭</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>تحدي الذاكرة</h3>
+                            <p>اعثر على الأزواج المتطابقة واختبر ذاكرتك!</p>
+                            <div class="game-stats">
+                                <span class="difficulty easy">سهل</span>
+                                <span class="rating">⭐ 4.4</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة الفضاء -->
+        <section id="space" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🚀 معركة الفضاء</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="spaceScore">0</span></div>
+                        <div class="lives">الحياة: <span id="spaceLives">3</span></div>
+                        <div class="level">المستوى: <span id="spaceLevel">1</span></div>
+                        <button id="spaceStart" class="control-btn">ابدأ</button>
+                        <button id="spacePause" class="control-btn">إيقاف</button>
+                    </div>
+                </div>
+                <canvas id="spaceCanvas" width="800" height="600"></canvas>
+                <div class="game-instructions">
+                    <p><strong>التحكم:</strong> استخدم الأسهم أو WASD للحركة، مسطرة المسافة للإطلاق. احم الأرض من الغزاة!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة الكلمات المشنوقة -->
+        <section id="hangman" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🎯 الكلمة المفقودة</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="hangmanScore">0</span></div>
+                        <div class="lives">المحاولات: <span id="hangmanLives">6</span></div>
+                        <button id="hangmanReset" class="control-btn">كلمة جديدة</button>
+                    </div>
+                </div>
+                <div class="word-board">
+                    <div id="hangmanDrawing" class="hangman-drawing"></div>
+                    <div id="wordDisplay" class="word-display"></div>
+                    <div id="alphabetGrid" class="alphabet-grid"></div>
+                    <div id="hangmanResult" class="game-result"></div>
+                </div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> اكتشف الكلمة السرية بتخمين الحروف. لديك 6 محاولات خاطئة فقط!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة الرياضيات -->
+        <section id="math" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🧮 تحدي الرياضيات</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="mathScore">0</span></div>
+                        <div class="streak">السلسلة: <span id="mathStreak">0</span></div>
+                        <div class="time">الوقت: <span id="mathTime">30</span>s</div>
+                        <button id="mathStart" class="control-btn">ابدأ</button>
+                        <button id="mathPause" class="control-btn">إيقاف</button>
+                    </div>
+                </div>
+                <div class="word-board">
+                    <div id="mathProblem" class="math-problem"></div>
+                    <div id="mathOptions" class="math-options"></div>
+                    <div id="mathResult" class="game-result"></div>
+                </div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> حل أكبر عدد من المسائل الرياضية في الوقت المحدد. كل إجابة صحيحة تزيد نقاطك!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة Flappy Bird -->
+        <section id="flappy" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🐦 الطائر المحلق</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="flappyScore">0</span></div>
+                        <div class="best">الأفضل: <span id="flappyBest">0</span></div>
+                        <button id="flappyStart" class="control-btn">ابدأ</button>
+                        <button id="flappyPause" class="control-btn">إيقاف</button>
+                    </div>
+                </div>
+                <canvas id="flappyCanvas" width="400" height="600"></canvas>
+                <div class="game-instructions">
+                    <p><strong>التحكم:</strong> اضغط مسطرة المسافة أو انقر للطيران. تجنب الأنابيب!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة 2048 -->
+        <section id="game2048" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🔢 لعبة 2048</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="game2048Score">0</span></div>
+                        <div class="best">الأفضل: <span id="game2048Best">0</span></div>
+                        <button id="game2048Reset" class="control-btn">لعبة جديدة</button>
+                    </div>
+                </div>
+                <div id="game2048Board" class="game2048-board"></div>
+                <div class="game-instructions">
+                    <p><strong>التحكم:</strong> استخدم الأسهم لتحريك البلاطات. ادمج البلاطات المتشابهة للوصول إلى 2048!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- باقي الألعاب (الأحجية، XO، الثعبان، الذاكرة) -->
+        <!-- لعبة الأحجية -->
+        <section id="puzzle" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🧩 الأحجية المنزلقة</h2>
+                    <div class="game-controls">
+                        <div class="moves">الحركات: <span id="puzzleMoves">0</span></div>
+                        <div class="time">الوقت: <span id="puzzleTime">00:00</span></div>
+                        <button id="puzzleShuffle" class="control-btn">خلط جديد</button>
+                    </div>
+                </div>
+                <div id="puzzleBoard" class="puzzle-board"></div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> رتب الأرقام من 1 إلى 15 بالترتيب الصحيح في أقل وقت وحركات ممكنة!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة XO -->
+        <section id="tictactoe" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>⭕ لعبة XO الكلاسيكية</h2>
+                    <div class="game-controls">
+                        <div class="turn">الدور: <span id="currentPlayer">X</span></div>
+                        <div class="wins">X: <span id="xWins">0</span> | O: <span id="oWins">0</span></div>
+                        <button id="tictactoeReset" class="control-btn">لعبة جديدة</button>
+                    </div>
+                </div>
+                <div id="tictactoeBoard" class="tictactoe-board"></div>
+                <div id="gameResult" class="game-result"></div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> احصل على ثلاث علامات متتالية أفقياً أو عمودياً أو قطرياً لتفوز!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة الثعبان -->
+        <section id="snake" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🐍 مغامرة الثعبان</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="snakeScore">0</span></div>
+                        <div class="best">الأفضل: <span id="snakeBest">0</span></div>
+                        <div class="speed">السرعة: <span id="snakeSpeed">1</span></div>
+                        <button id="snakeStart" class="control-btn">ابدأ</button>
+                        <button id="snakePause" class="control-btn">إيقاف</button>
+                    </div>
+                </div>
+                <canvas id="snakeCanvas" width="400" height="400"></canvas>
+                <div class="game-instructions">
+                    <p><strong>التحكم:</strong> استخدم الأسهم للحركة. اجمع الطعام لتنمو واحذر من الاصطدام!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة الذاكرة -->
+        <section id="memory" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🧠 تحدي الذاكرة</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="memoryScore">0</span></div>
+                        <div class="pairs">الأزواج: <span id="memoryPairs">0/8</span></div>
+                        <div class="time">الوقت: <span id="memoryTime">00:00</span></div>
+                        <button id="memoryReset" class="control-btn">لعبة جديدة</button>
+                    </div>
+                </div>
+                <div id="memoryBoard" class="memory-board"></div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> اعثر على جميع الأزواج المتطابقة في أقل عدد من المحاولات والوقت!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2024 مجموعة الألعاب المميزة - استمتع بالمغامرة! 🎮✨</p>
+        </div>
+    </footer>
+
+    <script src="app.js" defer></script>
+</body>
+</html>
