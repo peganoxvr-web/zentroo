@@ -1,8 +1,154 @@
+// مدير الصوت باستخدام Howler.js
+class SoundManager {
+    constructor(isEnabledFn){
+        this.isEnabledFn = isEnabledFn || (()=>true);
+        this.sounds = {};
+        // تعريف حزم أصوات بسيطة افتراضياً (يمكنك استبدالها بملفاتك لاحقاً)
+        this.register('ui_click', [this.tone(880,0.06)]);
+        this.register('success', [this.tone(1320,0.08), this.tone(1760,0.1)]);
+        this.register('error', [this.tone(220,0.12)]);
+        // Space
+        this.register('space_shoot', [this.tone(1200,0.04)]);
+        this.register('space_hit', [this.tone(300,0.08)]);
+        this.register('space_explosion', [this.tone(90,0.14)]);
+        // Snake
+        this.register('snake_eat', [this.tone(600,0.06)]);
+        this.register('snake_dead', [this.tone(180,0.12)]);
+        // Breaker
+        this.register('breaker_hit', [this.tone(980,0.04)]);
+        this.register('breaker_power', [this.tone(520,0.08)]);
+        // Flappy
+        this.register('flap', [this.tone(900,0.05)]);
+        this.register('flappy_score', [this.tone(1100,0.06)]);
+        // Hangman
+        this.register('hangman_correct', [this.tone(780,0.06)]);
+        this.register('hangman_wrong', [this.tone(240,0.08)]);
+        // Memory
+        this.register('memory_flip', [this.tone(700,0.05)]);
+        this.register('memory_match', [this.tone(1200,0.08)]);
+        // Simon
+        this.register('simon_ping', [this.tone(1000,0.07)]);
+        // Mole
+        this.register('mole_pop', [this.tone(800,0.05)]);
+    }
+    register(name, howls){ this.sounds[name] = howls.map(h=> new Howl({ src: [h], volume: 0.4 })); }
+    play(name){ if(!this.isEnabledFn()) return; const arr=this.sounds[name]; if(!arr||!arr.length) return; const snd=arr[Math.floor(Math.random()*arr.length)]; try{ snd.play(); }catch{} }
+    tone(freq,dur){
+        // يولد data:audio/wav;base64 لنغمة ساين قصيرة (أحادية 16-بت)
+        const sampleRate = 44100;
+        const length = Math.max(1, Math.floor(sampleRate * dur));
+        const headerSize = 44;
+        const dataSize = length * 2; // 16-bit mono
+        const buffer = new Uint8Array(headerSize + dataSize);
+        const view = new DataView(buffer.buffer);
+        const writeString = (offset, str) => { for (let i = 0; i < str.length; i++) buffer[offset + i] = str.charCodeAt(i); };
+        // RIFF header
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // Subchunk1Size
+        view.setUint16(20, 1, true);  // AudioFormat PCM
+        view.setUint16(22, 1, true);  // NumChannels mono
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true); // ByteRate
+        view.setUint16(32, 2, true);  // BlockAlign
+        view.setUint16(34, 16, true); // BitsPerSample
+        writeString(36, 'data');
+        view.setUint32(40, dataSize, true);
+        // Samples
+        const amp = 0.25;
+        for (let i = 0; i < length; i++) {
+            const t = i / sampleRate;
+            const sample = Math.sin(2 * Math.PI * freq * t) * amp * (1 - t / (dur || 0.001)); // fade out
+            const s = Math.max(-1, Math.min(1, sample));
+            view.setInt16(headerSize + i * 2, s * 0x7FFF, true);
+        }
+        // to base64
+        let bin = '';
+        for (let i = 0; i < buffer.length; i++) bin += String.fromCharCode(buffer[i]);
+        return 'data:audio/wav;base64,' + btoa(bin);
+    }
+}
+        // قاعدة بيانات محلية للإحصائيات (IndexedDB مع fallback إلى localStorage)
+        class StatsDB {
+            constructor() {
+                this.dbName = 'siteStatsDB';
+                this.storeName = 'gameStats';
+                this.db = null;
+                this.isIndexedDBAvailable = typeof indexedDB !== 'undefined';
+            }
+
+            open() {
+                return new Promise((resolve) => {
+                    if (!this.isIndexedDBAvailable) return resolve(null);
+                    if (this.db) return resolve(this.db);
+
+                    const request = indexedDB.open(this.dbName, 1);
+                    request.onupgradeneeded = () => {
+                        const db = request.result;
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            db.createObjectStore(this.storeName, { keyPath: 'gameName' });
+                        }
+                    };
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve(this.db);
+                    };
+                    request.onerror = () => resolve(null);
+                });
+            }
+
+            async get(gameName) {
+                const fallbackKey = `stats-${gameName}`;
+                const defaultStats = { gameName, bestScore: 0, totalScore: 0, gamesPlayed: 0, highestLevel: 1, lastUpdated: Date.now() };
+
+                const db = await this.open();
+                if (!db) {
+                    try { return JSON.parse(localStorage.getItem(fallbackKey)) || defaultStats; } catch { return defaultStats; }
+                }
+
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this.storeName, 'readonly');
+                    const store = tx.objectStore(this.storeName);
+                    const req = store.get(gameName);
+                    req.onsuccess = () => resolve(req.result || defaultStats);
+                    req.onerror = () => resolve(defaultStats);
+                });
+            }
+
+            async set(stats) {
+                const db = await this.open();
+                stats.lastUpdated = Date.now();
+                if (!db) {
+                    localStorage.setItem(`stats-${stats.gameName}`, JSON.stringify(stats));
+                    return;
+                }
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this.storeName, 'readwrite');
+                    const store = tx.objectStore(this.storeName);
+                    store.put(stats);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
+                });
+            }
+
+            async update(gameName, patch) {
+                const current = await this.get(gameName);
+                const next = { ...current, ...patch, gameName, lastUpdated: Date.now() };
+                await this.set(next);
+                return next;
+            }
+        }
+
         // إدارة التنقل بين الصفحات
         class GameManager {
             constructor() {
                 this.currentGame = 'home';
                 this.darkMode = localStorage.getItem('darkMode') === 'true';
+                this.playerName = localStorage.getItem('playerName') || 'ضيف';
+                this.soundEnabled = (localStorage.getItem('soundEnabled') || 'true') === 'true';
+                this.sound = new SoundManager(() => this.soundEnabled);
                 this.init();
                 // مراجع دوال منع التمرير
                 this.boundKeyPrevent = (e) => this.preventGlobalScrollKeys(e);
@@ -13,6 +159,8 @@
             init() {
                 // إعداد الوضع الليلي
                 this.initTheme();
+                // إعداد الهيدر العام
+                this.initHeader();
                 
                 // إعداد أزرار التنقل
                 document.querySelectorAll('.play-btn').forEach(btn => {
@@ -34,6 +182,46 @@
 
                 // تهيئة الألعاب
                 this.initGames();
+            }
+
+            initHeader() {
+                const nameEl = document.getElementById('playerNameDisplay');
+                if (nameEl) nameEl.textContent = `👤 ${this.playerName}`;
+                const changeNameBtn = document.getElementById('changeNameBtn');
+                if (changeNameBtn) changeNameBtn.addEventListener('click', () => {
+                    const n = prompt('اكتب اسمك: ', this.playerName) || this.playerName;
+                    this.playerName = n.slice(0, 20);
+                    localStorage.setItem('playerName', this.playerName);
+                    if (nameEl) nameEl.textContent = `👤 ${this.playerName}`;
+                });
+                const soundBtn = document.getElementById('soundToggle');
+                if (soundBtn) {
+                    const render = () => { soundBtn.textContent = this.soundEnabled ? '🔊 الصوت' : '🔈 كتم'; };
+                    render();
+                    soundBtn.addEventListener('click', () => {
+                        this.soundEnabled = !this.soundEnabled;
+                        localStorage.setItem('soundEnabled', String(this.soundEnabled));
+                        render();
+                    });
+                }
+                const statsBtn = document.getElementById('statsBtn');
+                const statsModal = document.getElementById('statsModal');
+                const closeStats = document.getElementById('closeStats');
+                if (statsBtn && statsModal && closeStats) {
+                    statsBtn.addEventListener('click', () => this.showStats());
+                    closeStats.addEventListener('click', () => statsModal.classList.add('hidden'));
+                }
+            }
+
+            async showStats() {
+                const statsModal = document.getElementById('statsModal');
+                const content = document.getElementById('statsContent');
+                if (!window.statsDB) window.statsDB = new StatsDB();
+                const games = ['space','breaker','snake','flappy','hangman','memory','puzzle','math','tictactoe'];
+                const rows = await Promise.all(games.map(async g => ({ g, s: await window.statsDB.get(g) })));
+                const html = rows.map(({g,s}) => `<p><strong>${g}</strong> — أفضل: ${s.bestScore||0}, مجموع: ${s.totalScore||0}, مرات اللعب: ${s.gamesPlayed||0}, أعلى مستوى: ${s.highestLevel||1}</p>`).join('');
+                content.innerHTML = `<p>اللاعب: <strong>${this.playerName}</strong></p>` + html;
+                statsModal.classList.remove('hidden');
             }
 
             initTheme() {
@@ -87,15 +275,34 @@
             }
 
             initGames() {
+                if (!window.statsDB) {
+                    window.statsDB = new StatsDB();
+                }
                 window.spaceInvaders = new SpaceInvaders();
                 window.hangman = new HangmanGame();
                 window.mathGame = new MathGame();
                 window.flappyBird = new FlappyBird();
-                window.game2048 = new Game2048();
+                window.brickBreaker = new BrickBreaker();
                 window.slidingPuzzle = new SlidingPuzzle();
                 window.ticTacToe = new TicTacToe();
                 window.snakeGame = new SnakeGame();
                 window.memoryGame = new MemoryGame();
+                window.moleGame = new WhackAMoleGame();
+                window.simonGame = new SimonGame();
+
+                // مزامنة أفضل نتيجة من قاعدة البيانات
+                try {
+                    window.statsDB.get('snake').then(s => {
+                        const best = Math.max(parseInt(localStorage.getItem('snakeBest') || '0', 10), s.bestScore || 0);
+                        document.getElementById('snakeBest').textContent = best;
+                        localStorage.setItem('snakeBest', best);
+                    });
+                    window.statsDB.get('breaker').then(s => {
+                        const best = s.bestScore || 0;
+                        const el = document.getElementById('breakerBest');
+                        if (el) el.textContent = best;
+                    });
+                } catch {}
             }
 
             resetGame(gameName) {
@@ -112,8 +319,8 @@
                     case 'flappy':
                         window.flappyBird.reset();
                         break;
-                    case 'game2048':
-                        window.game2048.reset();
+                    case 'breaker':
+                        window.brickBreaker.reset();
                         break;
                     case 'puzzle':
                         window.slidingPuzzle.shuffle();
@@ -126,6 +333,12 @@
                         break;
                     case 'memory':
                         window.memoryGame.reset();
+                        break;
+                    case 'mole':
+                        window.moleGame.reset();
+                        break;
+                    case 'simon':
+                        window.simonGame.reset();
                         break;
                 }
             }
@@ -472,6 +685,10 @@
                 this.level = 1;
                 this.gameRunning = false;
                 this.animationId = null;
+                this.lastShotAt = 0; // NEW: cooldown timer
+                this.baseCooldown = 280; // NEW: ms between shots
+                this.powerUps = []; // NEW: falling power-ups
+                this.active = { shieldUntil: 0, rapidUntil: 0, doubleUntil: 0 }; // NEW: active effects
         
                         this.player = {
                     x: this.canvas.width / 2 - 25,
@@ -479,7 +696,8 @@
                     width: 50,
                     height: 30,
                     speed: 6,
-                    vx: 0 // سرعة أفقية
+                    vx: 0, // سرعة أفقية
+                    vy: 0 // سرعة عمودية
                 };
         
         this.bullets = [];
@@ -494,9 +712,11 @@
     init() {
         document.getElementById('spaceStart').addEventListener('click', () => this.start());
         document.getElementById('spacePause').addEventListener('click', () => this.pause());
+        const spaceRetry = document.getElementById('spaceRetry'); if (spaceRetry) spaceRetry.addEventListener('click', () => this.reset());
+        const spaceNext = document.getElementById('spaceNext'); if (spaceNext) spaceNext.addEventListener('click', () => { this.level++; document.getElementById('spaceLevel').textContent = this.level; this.createEnemies(); this.start(); });
         
-        document.addEventListener('keydown', (e) => this.keys[e.key] = true);
-        document.addEventListener('keyup', (e) => this.keys[e.key] = false);
+        document.addEventListener('keydown', (e) => { this.keys[e.key] = true; this.keys[e.key.toLowerCase()] = true; });
+        document.addEventListener('keyup', (e) => { this.keys[e.key] = false; this.keys[e.key.toLowerCase()] = false; });
         
         this.createEnemies();
         this.draw();
@@ -542,23 +762,32 @@
                 const acceleration = 0.8;
                 const maxSpeed = this.player.speed;
                 
-                if ((this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) && this.player.x > 0) {
+                if ((this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A'] || this.keys['KeyA']) && this.player.x > 0) {
                     this.player.vx = Math.max(this.player.vx - acceleration, -maxSpeed);
-                } else if ((this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) && this.player.x < this.canvas.width - this.player.width) {
+                } else if ((this.keys['ArrowRight'] || this.keys['d'] || this.keys['D'] || this.keys['KeyD']) && this.player.x < this.canvas.width - this.player.width) {
                     this.player.vx = Math.min(this.player.vx + acceleration, maxSpeed);
                 } else {
                     this.player.vx *= 0.9; // احتكاك
                 }
                 
                 this.player.x += this.player.vx;
+                // NEW: عمودي W/S
+                if (this.keys['ArrowUp'] || this.keys['w'] || this.keys['W'] || this.keys['KeyW']) this.player.y -= maxSpeed;
+                if (this.keys['ArrowDown'] || this.keys['s'] || this.keys['S'] || this.keys['KeyS']) this.player.y += maxSpeed;
                 
                 // منع الخروج من الحدود
                 this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
+                this.player.y = Math.max(0, Math.min(this.canvas.height - this.player.height, this.player.y));
                 
-                // إطلاق النار المحسن
+                // NEW: إطلاق النار مع تبريد وحالة إطلاق سريع
+                const now = performance.now();
+                const cooldown = (this.isRapidActive() ? this.baseCooldown * 0.5 : this.baseCooldown);
                 if (this.keys[' '] || this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) {
-                    this.shoot();
-                    this.keys[' '] = false;
+                    if (now - this.lastShotAt >= cooldown) {
+                        this.shoot();
+                        try { window.gameManager.sound.play('space_shoot'); } catch {}
+                        this.lastShotAt = now;
+                    }
                 }
 
         // تحديث الرصاصات
@@ -580,14 +809,26 @@
             return particle.life > 0;
         });
 
+        // NEW: تحديث القوى الخاصة المتساقطة والتقاطها
+        this.powerUps = this.powerUps.filter(p => {
+            p.y += p.vy;
+            if (p.x > this.player.x && p.x < this.player.x + this.player.width && p.y > this.player.y && p.y < this.player.y + this.player.height) {
+                this.applyPowerUp(p.type);
+                return false;
+            }
+            return p.y <= this.canvas.height + 20;
+        });
+
         this.checkCollisions();
         this.updateEnemies();
     }
 
     shoot() {
-        if (this.bullets.length < 3) { // حد أقصى 3 رصاصات
+        // NEW: إطلاق مزدوج عند التفعيل
+        const shots = this.isDoubleActive() ? [-6, 6] : [0];
+        for (const dx of shots) {
             this.bullets.push({
-                x: this.player.x + this.player.width / 2 - 2,
+                x: this.player.x + this.player.width / 2 - 2 + dx,
                 y: this.player.y,
                 width: 4,
                 height: 10
@@ -638,6 +879,13 @@
                     
                     // إضافة تأثيرات بصرية
                                             this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 'enemy');
+                    try { window.gameManager.sound.play('space_explosion'); } catch {}
+                    // NEW: احتمال إسقاط قوة خاصة
+                    if (Math.random() < 0.08) {
+                        const types = ['shield', 'rapid', 'double', 'heal'];
+                        const type = types[Math.floor(Math.random() * types.length)];
+                        this.powerUps.push({ x: enemy.x + enemy.width/2, y: enemy.y + enemy.height/2, vy: 2 + Math.random()*1.5, type });
+                    }
                 }
             });
         });
@@ -650,10 +898,13 @@
                 bullet.y + bullet.height > this.player.y) {
                 
                 this.enemyBullets.splice(bulletIndex, 1);
-                this.lives--;
-                document.getElementById('spaceLives').textContent = this.lives;
+                if (!this.isShieldActive()) {
+                    this.lives--;
+                    document.getElementById('spaceLives').textContent = this.lives;
+                }
                 
                                         this.createExplosion(this.player.x + this.player.width/2, this.player.y + this.player.height/2, 'player');
+                try { window.gameManager.sound.play('space_hit'); } catch {}
                 
                 if (this.lives <= 0) {
                     this.gameOver();
@@ -719,7 +970,19 @@
 
     gameOver() {
         this.gameRunning = false;
-        alert(`انتهت اللعبة! النقاط النهائية: ${this.score} - المستوى: ${this.level}`);
+        (async () => {
+            try {
+                const s = await (window.statsDB ? window.statsDB.get('space') : Promise.resolve({ bestScore: 0, gamesPlayed: 0, totalScore: 0, highestLevel: 1 }));
+                const next = {
+                    bestScore: Math.max(s.bestScore || 0, this.score),
+                    gamesPlayed: (s.gamesPlayed || 0) + 1,
+                    totalScore: (s.totalScore || 0) + this.score,
+                    highestLevel: Math.max(s.highestLevel || 1, this.level)
+                };
+                if (window.statsDB) await window.statsDB.update('space', next);
+            } catch {}
+            alert(`انتهت اللعبة! النقاط النهائية: ${this.score} - المستوى: ${this.level}`);
+        })();
         this.reset();
     }
 
@@ -732,6 +995,7 @@
                 this.particles = [];
                 this.player.x = this.canvas.width / 2 - 25;
                 this.player.vx = 0;
+                this.player.y = this.canvas.height - 60;
                 this.createEnemies();
                 
                 document.getElementById('spaceScore').textContent = this.score;
@@ -767,6 +1031,14 @@
                 this.ctx.beginPath();
                 this.ctx.arc(x + width/2, y + height*0.4, width*0.15, 0, Math.PI * 2);
                 this.ctx.fill();
+                // NEW: درع عند التفعيل
+                if (this.isShieldActive()) {
+                    this.ctx.strokeStyle = 'rgba(135,206,250,0.8)';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(x + width/2, y + height*0.5, width*0.8, height*0.9, 0, 0, Math.PI*2);
+                    this.ctx.stroke();
+                }
             }
 
             drawEnemy(x, y, width, height, type) {
@@ -876,6 +1148,15 @@
                     this.ctx.fill();
                 });
                 this.ctx.globalAlpha = 1;
+
+                // NEW: رسم القوى الخاصة المتساقطة
+                this.powerUps.forEach(p => {
+                    const color = ({ shield: '#60a5fa', rapid: '#f59e0b', double: '#a78bfa', heal: '#10b981' })[p.type] || '#fff';
+                    this.ctx.fillStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
             }
 
     gameLoop() {
@@ -884,6 +1165,22 @@
         
         if (this.gameRunning) {
             this.animationId = requestAnimationFrame(() => this.gameLoop());
+        }
+    }
+
+    isShieldActive() { return Date.now() < (this.active && this.active.shieldUntil || 0); }
+    isRapidActive() { return Date.now() < (this.active && this.active.rapidUntil || 0); }
+    isDoubleActive() { return Date.now() < (this.active && this.active.doubleUntil || 0); }
+    applyPowerUp(type) {
+        const now = Date.now();
+        switch (type) {
+            case 'shield': this.active.shieldUntil = now + 6000; break;
+            case 'rapid': this.active.rapidUntil = now + 5000; break;
+            case 'double': this.active.doubleUntil = now + 6000; break;
+            case 'heal':
+                this.lives = Math.min(5, this.lives + 1);
+                document.getElementById('spaceLives').textContent = this.lives;
+                break;
         }
     }
 }
@@ -909,19 +1206,19 @@
         this.jump = -8;
         this.pipeWidth = 60;
         this.pipeGap = 150;
+        this.level = 1; // NEW: level
         
         document.getElementById('flappyBest').textContent = this.bestScore;
+        const fl = document.getElementById('flappyLevel'); if (fl) fl.textContent = this.level; // NEW UI sync
         this.init();
     }
 
     init() {
         document.getElementById('flappyStart').addEventListener('click', () => this.start());
         document.getElementById('flappyPause').addEventListener('click', () => this.pause());
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && this.gameRunning) {
-                this.bird.velocity = this.jump;
-            }
-        });
+        const fr = document.getElementById('flappyRetry'); if (fr) fr.addEventListener('click', () => { this.reset(); this.start(); });
+        const fn = document.getElementById('flappyNext'); if (fn) fn.addEventListener('click', () => { this.level++; const el = document.getElementById('flappyLevel'); if (el) el.textContent = this.level; this.pipeGap = Math.max(90, 150 - (this.level - 1) * 8); this.start(); });
+        document.addEventListener('keydown', (e) => { if (!this.gameRunning) return; const code = e.code; if (code === 'Space' || code === 'KeyW' || code === 'ArrowUp') { this.bird.velocity = this.jump; try { window.gameManager.sound.play('flap'); } catch {} } });
         this.canvas.addEventListener('click', () => {
             if (this.gameRunning) this.bird.velocity = this.jump;
         });
@@ -934,6 +1231,8 @@
             this.pipes = [];
             this.bird = { x: 50, y: 200, velocity: 0, size: 20 };
             this.score = 0;
+            this.level = 1; // NEW: reset level
+            const fl = document.getElementById('flappyLevel'); if (fl) fl.textContent = this.level;
             document.getElementById('flappyScore').textContent = this.score;
             this.gameLoop();
         }
@@ -968,11 +1267,18 @@
                 this.score++;
                 pipe.scored = true;
                 document.getElementById('flappyScore').textContent = this.score;
+                try { window.gameManager.sound.play('flappy_score'); } catch {}
                 
                 if (this.score > this.bestScore) {
                     this.bestScore = this.score;
                     localStorage.setItem('flappyBest', this.bestScore);
                     document.getElementById('flappyBest').textContent = this.bestScore;
+                }
+                // NEW: level up every 10 points, tighten gap
+                if (this.score % 10 === 0) {
+                    this.level++;
+                    const fl = document.getElementById('flappyLevel'); if (fl) fl.textContent = this.level;
+                    this.pipeGap = Math.max(90, 150 - (this.level - 1) * 8);
                 }
             }
             
@@ -1131,6 +1437,339 @@
     gameLoop() {
         this.update();
         this.draw();
+    }
+}
+
+// لعبة بريك بريكر (محطم القرميد)
+class BrickBreaker {
+    constructor() {
+        this.canvas = document.getElementById('breakerCanvas');
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.width = 700;
+        this.canvas.height = 500;
+        this.canvas.style.maxWidth = '100%';
+        this.canvas.style.height = 'auto';
+
+        this.keys = {};
+        this.gameRunning = false;
+        this.level = 1;
+        this.lives = 3;
+        this.score = 0;
+        this.bestScore = 0;
+        this.lastTs = 0;
+        this.paddle = { x: this.canvas.width / 2 - 60, y: this.canvas.height - 30, width: 120, height: 14, speed: 8 };
+        this.balls = [];
+        this.bricks = [];
+        this.powerUps = [];
+        this.activeEffects = {};
+
+        this.colors = ['#34d399', '#60a5fa', '#f472b6', '#f59e0b', '#f87171', '#a78bfa'];
+
+        this.init();
+    }
+
+    async init() {
+        // load best from DB
+        try {
+            const s = await (window.statsDB ? window.statsDB.get('breaker') : Promise.resolve({ bestScore: 0 }));
+            this.bestScore = s.bestScore || 0;
+            const el = document.getElementById('breakerBest');
+            if (el) el.textContent = this.bestScore;
+        } catch {}
+
+        document.getElementById('breakerStart').addEventListener('click', () => this.start());
+        document.getElementById('breakerPause').addEventListener('click', () => this.pause());
+        const br = document.getElementById('breakerRetry'); if (br) br.addEventListener('click', () => { this.reset(); this.start(); });
+        const bn = document.getElementById('breakerNext'); if (bn) bn.addEventListener('click', () => { this.level++; document.getElementById('breakerLevel').textContent = this.level; this.buildLevel(); this.resetBall(); this.start(); });
+        document.addEventListener('keydown', (e) => { this.keys[e.key] = true; this.keys[e.key.toLowerCase()] = true; this.keys[e.code] = true; if ((e.code === 'Space') && this.gameRunning) e.preventDefault(); });
+        document.addEventListener('keyup', (e) => { this.keys[e.key] = false; this.keys[e.key.toLowerCase()] = false; this.keys[e.code] = false; });
+        this.canvas.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+            this.paddle.x = Math.max(0, Math.min(this.canvas.width - this.paddle.width, mx - this.paddle.width / 2));
+        });
+
+        this.buildLevel();
+        this.resetBall();
+        this.draw();
+    }
+
+    buildLevel() {
+        this.bricks = [];
+        const cols = 10;
+        const rows = Math.min(6 + Math.floor((this.level - 1) * 0.75), 12);
+        const padding = 6;
+        const brickWidth = (this.canvas.width - padding * (cols + 1)) / cols;
+        const brickHeight = 20;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = padding + c * (brickWidth + padding);
+                const y = 70 + r * (brickHeight + padding);
+                const hp = 1 + Math.floor((this.level - 1) / 3) + (r % 2 === 0 ? 0 : 1);
+                this.bricks.push({ x, y, width: brickWidth, height: brickHeight, hp, color: this.colors[(r + c) % this.colors.length] });
+            }
+        }
+    }
+
+    resetBall(sticky = true) {
+        const radius = 7;
+        const x = this.paddle.x + this.paddle.width / 2;
+        const y = this.paddle.y - radius - 1;
+        this.balls = [{ x, y, vx: 0, vy: -5, r: radius, stuck: sticky }];
+    }
+
+    start() {
+        if (!this.gameRunning) {
+            this.gameRunning = true;
+            this.lastTs = performance.now();
+            this.gameLoop(this.lastTs);
+        }
+    }
+
+    pause() { this.gameRunning = false; }
+
+    reset() {
+        this.score = 0;
+        this.level = 1;
+        this.lives = 3;
+        document.getElementById('breakerScore').textContent = this.score;
+        document.getElementById('breakerLives').textContent = this.lives;
+        document.getElementById('breakerLevel').textContent = this.level;
+        this.buildLevel();
+        this.resetBall();
+        this.draw();
+        this.gameRunning = false;
+    }
+
+    gameLoop(ts) {
+        if (!this.gameRunning) { this.draw(); return; }
+        const dt = Math.min(32, ts - this.lastTs);
+        this.lastTs = ts;
+        this.update(dt);
+        this.draw();
+        requestAnimationFrame((t) => this.gameLoop(t));
+    }
+
+    update(dt) {
+        // paddle move
+        if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) {
+            this.paddle.x -= this.paddle.speed;
+        } else if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D'] || this.keys['KeyD']) {
+            this.paddle.x += this.paddle.speed;
+        }
+        this.paddle.x = Math.max(0, Math.min(this.canvas.width - this.paddle.width, this.paddle.x));
+
+        // launch ball
+        if ((this.keys[' '] || this.keys['Spacebar'] || this.keys['Space']) && this.balls.some(b => b.stuck)) {
+            this.balls.forEach(b => { if (b.stuck) { b.stuck = false; b.vx = 0; b.vy = -5 - Math.min(4, this.level * 0.3); } });
+        }
+
+        // update balls
+        for (const ball of this.balls) {
+            if (ball.stuck) {
+                ball.x = this.paddle.x + this.paddle.width / 2;
+                ball.y = this.paddle.y - ball.r - 1;
+                continue;
+            }
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // walls
+            if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx *= -1; }
+            if (ball.x + ball.r > this.canvas.width) { ball.x = this.canvas.width - ball.r; ball.vx *= -1; }
+            if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -1; }
+
+            // paddle collision
+            if (ball.y + ball.r >= this.paddle.y && ball.y + ball.r <= this.paddle.y + this.paddle.height && ball.x >= this.paddle.x && ball.x <= this.paddle.x + this.paddle.width && ball.vy > 0) {
+                const hit = (ball.x - (this.paddle.x + this.paddle.width / 2)) / (this.paddle.width / 2);
+                const speed = Math.hypot(ball.vx, ball.vy) || (5 + this.level * 0.2);
+                const angle = hit * (Math.PI / 3); // -60°..+60°
+                ball.vx = speed * Math.sin(angle);
+                ball.vy = -Math.abs(speed * Math.cos(angle));
+                if (this.activeEffects.sticky && Date.now() < this.activeEffects.sticky) {
+                    ball.stuck = true;
+                }
+            }
+        }
+
+        // bricks collision and removal
+        const newBricks = [];
+        for (const brick of this.bricks) {
+            let hitThisBrick = false;
+            for (const ball of this.balls) {
+                if (ball.x + ball.r > brick.x && ball.x - ball.r < brick.x + brick.width && ball.y + ball.r > brick.y && ball.y - ball.r < brick.y + brick.height) {
+                    // determine collision normal (simple)
+                    const overlapLeft = (ball.x + ball.r) - brick.x;
+                    const overlapRight = (brick.x + brick.width) - (ball.x - ball.r);
+                    const overlapTop = (ball.y + ball.r) - brick.y;
+                    const overlapBottom = (brick.y + brick.height) - (ball.y - ball.r);
+                    const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                    if (minOverlap === overlapLeft || minOverlap === overlapRight) ball.vx *= -1; else ball.vy *= -1;
+                    brick.hp -= 1;
+                    if (brick.hp <= 0) {
+                        this.score += 10;
+                        document.getElementById('breakerScore').textContent = this.score;
+                        // drop powerup chance
+                        if (Math.random() < 0.15) {
+                            const types = ['expand', 'multiball', 'slow', 'sticky'];
+                            const type = types[Math.floor(Math.random() * types.length)];
+                            this.powerUps.push({ x: brick.x + brick.width / 2, y: brick.y + brick.height / 2, vy: 2, type, size: 14 });
+                        }
+                    }
+                    hitThisBrick = true;
+                    break;
+                }
+            }
+            if (!hitThisBrick || brick.hp > 0) newBricks.push(brick);
+        }
+        this.bricks = newBricks;
+
+        // powerups update
+        const newPowerUps = [];
+        for (const p of this.powerUps) {
+            p.y += p.vy;
+            if (p.y > this.canvas.height + 20) continue;
+            // paddle catch
+            if (p.y + p.size / 2 >= this.paddle.y && p.x >= this.paddle.x && p.x <= this.paddle.x + this.paddle.width) {
+                this.applyPowerUp(p.type);
+                continue;
+            }
+            newPowerUps.push(p);
+        }
+        this.powerUps = newPowerUps;
+
+        // remove balls that fell
+        this.balls = this.balls.filter(b => b.y - b.r <= this.canvas.height + 40);
+        if (this.balls.length === 0) {
+            this.lives--;
+            document.getElementById('breakerLives').textContent = this.lives;
+            if (this.lives <= 0) {
+                this.endGame();
+                return;
+            } else {
+                this.resetBall(true);
+            }
+        }
+
+        // next level
+        if (this.bricks.length === 0) {
+            this.level++;
+            document.getElementById('breakerLevel').textContent = this.level;
+            this.buildLevel();
+            this.resetBall(true);
+        }
+
+        // effects expiry
+        const now = Date.now();
+        if (this.activeEffects.expand && now > this.activeEffects.expand) { this.paddle.width = Math.max(100, this.paddle.width / 1.5); delete this.activeEffects.expand; }
+        if (this.activeEffects.slow && now > this.activeEffects.slow) { this.balls.forEach(b => { b.vx *= 1.25; b.vy *= 1.25; }); delete this.activeEffects.slow; }
+        if (this.activeEffects.sticky && now > this.activeEffects.sticky) { delete this.activeEffects.sticky; }
+    }
+
+    applyPowerUp(type) {
+        switch (type) {
+            case 'expand':
+                this.paddle.width = Math.min(this.paddle.width * 1.5, 220);
+                this.activeEffects.expand = Date.now() + 8000;
+                break;
+            case 'multiball':
+                const clones = [];
+                for (const b of this.balls) {
+                    clones.push({ x: b.x, y: b.y, vx: b.vx * 0.8 + 1.2, vy: b.vy * 0.8, r: b.r, stuck: false });
+                    clones.push({ x: b.x, y: b.y, vx: b.vx * 0.8 - 1.2, vy: b.vy * 0.8, r: b.r, stuck: false });
+                }
+                this.balls.push(...clones);
+                break;
+            case 'slow':
+                this.balls.forEach(b => { b.vx *= 0.8; b.vy *= 0.8; });
+                this.activeEffects.slow = Date.now() + 6000;
+                break;
+            case 'sticky':
+                this.activeEffects.sticky = Date.now() + 7000;
+                break;
+        }
+    }
+
+    async endGame() {
+        this.gameRunning = false;
+        // stats
+        try {
+            const s = await (window.statsDB ? window.statsDB.get('breaker') : Promise.resolve({ bestScore: 0, gamesPlayed: 0, totalScore: 0, highestLevel: 1 }));
+            const next = {
+                bestScore: Math.max(s.bestScore || 0, this.score),
+                gamesPlayed: (s.gamesPlayed || 0) + 1,
+                totalScore: (s.totalScore || 0) + this.score,
+                highestLevel: Math.max(s.highestLevel || 1, this.level)
+            };
+            if (window.statsDB) await window.statsDB.update('breaker', next);
+            this.bestScore = next.bestScore;
+            const el = document.getElementById('breakerBest');
+            if (el) el.textContent = this.bestScore;
+        } catch {}
+        setTimeout(() => alert(`انتهت اللعبة! النقاط: ${this.score} | أفضل: ${this.bestScore}`), 50);
+        this.reset();
+    }
+
+    draw() {
+        // background
+        const g = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        g.addColorStop(0, '#0b1020');
+        g.addColorStop(1, '#0f1a36');
+        this.ctx.fillStyle = g;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // glow stars
+        this.ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        for (let i = 0; i < 60; i++) {
+            const x = (i * 97) % this.canvas.width;
+            const y = (i * 53 + Date.now() * 0.03) % this.canvas.height;
+            this.ctx.fillRect(x, y, 1 + (i % 2), 1 + (i % 2));
+        }
+
+        // bricks
+        for (const b of this.bricks) {
+            this.ctx.fillStyle = b.color;
+            this.ctx.globalAlpha = Math.min(1, 0.6 + 0.2 * b.hp);
+            this.roundRect(b.x, b.y, b.width, b.height, 6, true, false);
+            this.ctx.globalAlpha = 1;
+        }
+
+        // paddle
+        this.ctx.fillStyle = '#22d3ee';
+        this.roundRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height, 10, true, false);
+
+        // balls
+        for (const ball of this.balls) {
+            const grd = this.ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, ball.r);
+            grd.addColorStop(0, '#ffffff');
+            grd.addColorStop(1, '#60a5fa');
+            this.ctx.fillStyle = grd;
+            this.ctx.beginPath();
+            this.ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        // powerups
+        for (const p of this.powerUps) {
+            this.ctx.fillStyle = ({ expand: '#10b981', multiball: '#a78bfa', slow: '#f59e0b', sticky: '#ef4444' })[p.type] || '#fff';
+            this.roundRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size, 4, true, false);
+        }
+    }
+
+    roundRect(x, y, w, h, r, fill, stroke) {
+        const ctx = this.ctx;
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
     }
 }
 
@@ -1385,6 +2024,7 @@ class TicTacToe {
                 
                 this.gridSize = 20;
         this.snake = [{ x: 200, y: 200 }];
+        this.prevSnake = this.snake.map(s => ({ x: s.x, y: s.y }));
         this.direction = { x: 0, y: 0 };
         this.nextDirection = { x: 0, y: 0 };
         this.food = this.generateFood();
@@ -1392,14 +2032,22 @@ class TicTacToe {
         this.bestScore = localStorage.getItem('snakeBest') || 0;
         this.gameRunning = false;
         this.speed = 1;
+        this.tickInterval = 200; // ms per step, adjusted by speed
+        this.lastTs = 0;
+        this.accumulator = 0;
+        this.renderAlpha = 0;
+        this.level = 1;
 
         document.getElementById('snakeBest').textContent = this.bestScore;
+        const sl = document.getElementById('snakeLevel'); if (sl) sl.textContent = this.level;
         this.init();
     }
 
     init() {
         document.getElementById('snakeStart').addEventListener('click', () => this.start());
         document.getElementById('snakePause').addEventListener('click', () => this.pause());
+        const sr = document.getElementById('snakeRetry'); if (sr) sr.addEventListener('click', () => { this.reset(); this.start(); });
+        const sn = document.getElementById('snakeNext'); if (sn) sn.addEventListener('click', () => { this.level++; const sl = document.getElementById('snakeLevel'); if (sl) sl.textContent = this.level; this.tickInterval = Math.max(80, this.tickInterval - 10); this.start(); });
 
                         document.addEventListener('keydown', (e) => {
                     if (!this.gameRunning) return;
@@ -1446,7 +2094,9 @@ class TicTacToe {
     start() {
         if (!this.gameRunning) {
             this.gameRunning = true;
-            this.gameLoop();
+            this.lastTs = performance.now();
+            this.accumulator = 0;
+            requestAnimationFrame((t) => this.gameLoop(t));
         }
     }
 
@@ -1454,24 +2104,30 @@ class TicTacToe {
         this.gameRunning = false;
     }
 
-                update() {
-                if (!this.gameRunning) return;
-
+                stepOnce() {
                 // تطبيق الاتجاه التالي
                 if (this.nextDirection.x !== 0 || this.nextDirection.y !== 0) {
                     this.direction = this.nextDirection;
                 }
 
+                // احفظ الوضع السابق للتنعيم
+                this.prevSnake = this.snake.map(seg => ({ x: seg.x, y: seg.y }));
+
+                // إذا لم يتم تعيين اتجاه بعد، لا تتحرك ولا تحتسب خطوة
+                if (this.direction.x === 0 && this.direction.y === 0) {
+                    return;
+                }
+
                 const head = { x: this.snake[0].x + this.direction.x, y: this.snake[0].y + this.direction.y };
 
-        // الحدود
-        if (head.x < 0 || head.x >= this.canvas.width || head.y < 0 || head.y >= this.canvas.height) {
-            this.gameOver();
-            return;
-        }
+        // الحدود (التفاف عبر الحواف بدلاً من الخسارة)
+        if (head.x < 0) head.x = this.canvas.width - this.gridSize;
+        if (head.x >= this.canvas.width) head.x = 0;
+        if (head.y < 0) head.y = this.canvas.height - this.gridSize;
+        if (head.y >= this.canvas.height) head.y = 0;
 
         // اصطدام بالجسم
-        if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        if (this.snake.some((segment, idx) => idx !== 0 && segment.x === head.x && segment.y === head.y)) {
             this.gameOver();
             return;
         }
@@ -1482,7 +2138,9 @@ class TicTacToe {
                 if (head.x === this.food.x && head.y === this.food.y) {
                     const bonus = Math.max(10, 20 - Math.floor(this.snake.length / 5));
                     this.score += bonus;
-                    this.speed = Math.min(5, Math.floor(this.score / 50) + 1);
+                    try { window.gameManager.sound.play('snake_eat'); } catch {}
+                    this.speed = Math.min(6, Math.floor(this.score / 50) + 1);
+                    this.tickInterval = 200 - (this.speed - 1) * 20;
                     
                     // تأثير بصري للنقاط
                     this.showScoreEffect(head.x, head.y, `+${bonus}`);
@@ -1500,6 +2158,13 @@ class TicTacToe {
                     }
 
                     this.food = this.generateFood();
+                    // تقدم مستوى كل 5 أكلات
+                    if ((this.snake.length - 1) % 5 === 0) {
+                        this.level++;
+                        const sl = document.getElementById('snakeLevel'); if (sl) sl.textContent = this.level;
+                        // زيادة التحدي: تسريع طفيف وزيادة شبكات العوائق لاحقاً (يمكن التوسع)
+                        this.tickInterval = Math.max(80, this.tickInterval - 10);
+                    }
                 } else {
                     this.snake.pop();
                 }
@@ -1588,26 +2253,39 @@ class TicTacToe {
                     this.ctx.stroke();
                 }
 
-                // رسم الثعبان المحسن
-                this.snake.forEach((segment, index) => {
-                    if (index === 0) {
-                        this.drawSnakeHead(segment.x, segment.y, this.gridSize);
+                // حساب مواضع ناعمة بالاقحام الزمني
+                const alpha = this.renderAlpha || 0;
+                for (let i = 0; i < this.snake.length; i++) {
+                    const curr = this.snake[i];
+                    const prev = (this.prevSnake[i] || curr);
+                    const x = prev.x + (curr.x - prev.x) * alpha;
+                    const y = prev.y + (curr.y - prev.y) * alpha;
+                    if (i === 0) {
+                        this.drawSnakeHead(x, y, this.gridSize);
                     } else {
-                        this.drawSnakeBody(segment.x, segment.y, this.gridSize, index);
+                        this.drawSnakeBody(x, y, this.gridSize, i);
                     }
-                });
+                }
 
                 // رسم الطعام المحسن
                 this.drawFood(this.food.x, this.food.y, this.gridSize);
             }
 
-                gameLoop() {
-                this.update();
-                this.draw();
-
-                if (this.gameRunning) {
-                    setTimeout(() => this.gameLoop(), 200 - (this.speed - 1) * 20);
+                gameLoop(ts) {
+                if (!this.gameRunning) { this.draw(); return; }
+                const dt = ts - this.lastTs;
+                this.lastTs = ts;
+                this.accumulator += dt;
+                const step = this.tickInterval;
+                // امنع التراكم المفرط
+                if (this.accumulator > 5 * step) this.accumulator = step;
+                while (this.accumulator >= step) {
+                    this.stepOnce();
+                    this.accumulator -= step;
                 }
+                this.renderAlpha = Math.max(0, Math.min(1, this.accumulator / step));
+                this.draw();
+                requestAnimationFrame((t) => this.gameLoop(t));
             }
 
             showScoreEffect(x, y, text, color = '#00ff00') {
@@ -1639,8 +2317,18 @@ class TicTacToe {
                 }, 1100);
             }
 
-            gameOver() {
+            async gameOver() {
                 this.gameRunning = false;
+                try {
+                    const s = await (window.statsDB ? window.statsDB.get('snake') : Promise.resolve({ bestScore: 0, gamesPlayed: 0, totalScore: 0, highestLevel: 1 }));
+                    const next = {
+                        bestScore: Math.max(s.bestScore || 0, this.score),
+                        gamesPlayed: (s.gamesPlayed || 0) + 1,
+                        totalScore: (s.totalScore || 0) + this.score,
+                        highestLevel: Math.max(s.highestLevel || 1, this.speed)
+                    };
+                    if (window.statsDB) await window.statsDB.update('snake', next);
+                } catch {}
                 setTimeout(() => {
                     alert(`انتهت اللعبة! النقاط: ${this.score}\nأفضل نتيجة: ${this.bestScore}`);
                 }, 100);
@@ -1783,6 +2471,77 @@ class MemoryGame {
     }
 }
 
+// لعبة ضرب الخلد
+class WhackAMoleGame {
+    constructor() {
+        this.board = document.getElementById('moleBoard');
+        if (!this.board) return;
+        this.score = 0; this.level = 1; this.timeLeft = 30; this.timer = null; this.gameRunning = false;
+        this.holes = [];
+        document.getElementById('moleStart').addEventListener('click', () => this.start());
+        document.getElementById('molePause').addEventListener('click', () => this.pause());
+        const r=document.getElementById('moleRetry'); if(r) r.addEventListener('click',()=>{this.reset(); this.start();});
+        const n=document.getElementById('moleNext'); if(n) n.addEventListener('click',()=>{this.level++; this.start();});
+        this.renderBoard();
+    }
+    renderBoard() {
+        this.board.innerHTML = '';
+        const total = 9;
+        for (let i=0;i<total;i++) {
+            const hole = document.createElement('button');
+            hole.className='memory-card';
+            hole.style.height='90px'; hole.textContent='🕳️';
+            hole.addEventListener('click',()=>{ if (hole.dataset.mole==='1'){ this.score+=10; try{ window.gameManager.sound.play('mole_pop'); }catch{} hole.dataset.mole='0'; hole.textContent='🕳️'; document.getElementById('moleScore').textContent=this.score; }});
+            this.board.appendChild(hole); this.holes.push(hole);
+        }
+    }
+    start() {
+        if (this.gameRunning) return; this.gameRunning = true;
+        this.timeLeft = Math.max(15, 30 - (this.level-1)*2);
+        document.getElementById('moleTime').textContent=this.timeLeft;
+        this.score = 0; document.getElementById('moleScore').textContent=this.score;
+        clearInterval(this.timer);
+        this.timer = setInterval(()=>{ this.tick(); }, 1000);
+        this.loop();
+    }
+    pause(){ this.gameRunning=false; clearInterval(this.timer); }
+    reset(){ this.pause(); this.holes.forEach(h=>{h.dataset.mole='0'; h.textContent='🕳️';}); this.level=1; document.getElementById('moleTime').textContent='30'; document.getElementById('moleScore').textContent='0'; }
+    tick(){ this.timeLeft--; document.getElementById('moleTime').textContent=this.timeLeft; if(this.timeLeft<=0){ this.end(); } }
+    loop(){ if(!this.gameRunning) return; const appear = Math.max(300, 900 - this.level*100); const idx = Math.floor(Math.random()*this.holes.length); const hole=this.holes[idx]; hole.dataset.mole='1'; hole.textContent='🐹'; setTimeout(()=>{ if (hole.dataset.mole==='1'){ hole.dataset.mole='0'; hole.textContent='🕳️'; } if(this.gameRunning) this.loop(); }, appear); }
+    async end(){ this.pause(); try{ const s = await window.statsDB.get('mole'); await window.statsDB.update('mole',{ bestScore: Math.max(s.bestScore||0,this.score), gamesPlayed:(s.gamesPlayed||0)+1, totalScore:(s.totalScore||0)+this.score, highestLevel: Math.max(s.highestLevel||1,this.level) }); }catch{} alert(`انتهت الجولة! نقاطك: ${this.score}`); }
+}
+
+// لعبة سيمون
+class SimonGame {
+    constructor(){
+        this.board=document.getElementById('simonBoard'); if(!this.board) return;
+        this.sequence=[]; this.input=[]; this.round=1; this.best=parseInt(localStorage.getItem('simonBest')||'0',10);
+        this.gameRunning=false; this.acceptInput=false;
+        const bEl=document.getElementById('simonBest'); if(bEl) bEl.textContent=this.best;
+        document.getElementById('simonStart').addEventListener('click',()=>this.start());
+        const sr=document.getElementById('simonRetry'); if(sr) sr.addEventListener('click',()=>{ this.reset(); this.start(); });
+        this.colors=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#22d3ee','#f472b6','#a3e635','#fb7185'];
+        this.buttons=[]; this.renderBoard();
+    }
+    renderBoard(){
+        this.board.innerHTML=''; this.buttons=[];
+        for(let i=0;i<this.colors.length;i++){
+            const btn=document.createElement('button');
+            btn.className='memory-card'; btn.style.height='120px'; btn.style.background=this.colors[i];
+            btn.addEventListener('click',()=>{ try{ window.gameManager.sound.play('simon_ping'); }catch{} this.press(i); });
+            this.board.appendChild(btn); this.buttons.push(btn);
+        }
+    }
+    start(){ if(this.gameRunning) return; this.gameRunning=true; this.sequence=[]; this.round=1; this.updateRound(); this.next(); }
+    reset(){ this.sequence=[]; this.input=[]; this.round=1; this.gameRunning=false; this.acceptInput=false; this.updateRound(); }
+    updateRound(){ const r=document.getElementById('simonRound'); if(r) r.textContent=String(this.round); }
+    async next(){ if(!this.gameRunning) return; this.input=[]; this.sequence.push(Math.floor(Math.random()*this.colors.length)); this.updateRound(); await this.playback(); this.acceptInput=true; }
+    async playback(){ this.acceptInput=false; for(const idx of this.sequence){ await this.flash(idx); await this.sleep(250); } }
+    async flash(i){ const btn=this.buttons[i]; const oldF=btn.style.filter; const oldS=btn.style.boxShadow; btn.style.filter='brightness(2) contrast(1.2)'; btn.style.boxShadow='0 0 24px rgba(255,255,255,0.8)'; await this.sleep(420); btn.style.filter=oldF||''; btn.style.boxShadow=oldS||''; }
+    sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+    async press(i){ if(!this.gameRunning || !this.acceptInput) return; this.input.push(i); const step=this.input.length-1; if(this.input[step]!==this.sequence[step]){ await this.gameOver(); return; } if(this.input.length===this.sequence.length){ this.acceptInput=false; this.round++; this.best=Math.max(this.best,this.round-1); localStorage.setItem('simonBest',String(this.best)); const b=document.getElementById('simonBest'); if(b) b.textContent=this.best; await this.sleep(400); this.next(); } }
+    async gameOver(){ this.gameRunning=false; this.acceptInput=false; try{ const s=await window.statsDB.get('simon'); await window.statsDB.update('simon',{ bestScore: Math.max(s.bestScore||0,this.round-1), gamesPlayed:(s.gamesPlayed||0)+1, totalScore:(s.totalScore||0)+(this.round-1), highestLevel: Math.max(s.highestLevel||1,this.round-1) }); }catch{} alert(`انتهت اللعبة! وصلت للجولة ${this.round-1}`); this.reset(); }
+}
 // لعبة 2048
 class Game2048 {
     constructor() {
@@ -2077,6 +2836,83 @@ document.addEventListener('DOMContentLoaded', () => {
             const tl = gsap.timeline({ repeat: -1, yoyo: true });
             tl.to(cat, { y: "-=6", duration: 0, ease: 'power1.inOut' })
               .to(cat, { y: "+=6", duration: 0, ease: 'power1.inOut' });
+        }
+    } catch {}
+
+    // تضمين Spline: نحاول React UMD أولاً، وإن فشل نستخدم web component كخطة بديلة
+    try {
+        const mount = document.getElementById('splineMount');
+        if (mount) {
+            const sceneUrl = 'https://prod.spline.design/fEGsWX4LrFFfCYwq/scene.splinecode';
+            const addScript = (src, type = 'text/javascript') => new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src; s.type = type; s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+            });
+            const reactCdn = 'https://unpkg.com/react@18/umd/react.production.min.js';
+            const reactDomCdn = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
+            // عدة مسارات محتملة للـ UMD
+            const splineCdns = [
+                'https://unpkg.com/@splinetool/react-spline@latest/dist/react-spline.umd.js',
+                'https://unpkg.com/@splinetool/react-spline/umd/react-spline.umd.js',
+                'https://unpkg.com/@splinetool/react-spline'
+            ];
+
+            const mountReactSpline = () => {
+                const SplineComp = (window.reactSpline && window.reactSpline.Spline)
+                    || window.Spline
+                    || (window['@splinetool/react-spline'] && window['@splinetool/react-spline'].Spline)
+                    || (window.ReactSpline && window.ReactSpline.Spline);
+                if (!SplineComp || !window.React || !window.ReactDOM) return false;
+                try {
+                    if (window.ReactDOM.createRoot) {
+                        const root = window.ReactDOM.createRoot(mount);
+                        root.render(window.React.createElement(SplineComp, { scene: sceneUrl }));
+                    } else {
+                        window.ReactDOM.render(window.React.createElement(SplineComp, { scene: sceneUrl }), mount);
+                    }
+                    return true;
+                } catch { return false; }
+            };
+
+            const mountViewerFallback = async () => {
+                await addScript('https://unpkg.com/@splinetool/viewer@latest/build/spline-viewer.js', 'module');
+                mount.innerHTML = '';
+                const el = document.createElement('spline-viewer');
+                el.setAttribute('url', sceneUrl);
+                el.style.width = '100%';
+                el.style.height = '100%';
+                el.style.background = 'transparent';
+                mount.appendChild(el);
+                // اخفاء العلامة المائية إن وُجدت
+                const hide = () => {
+                    try {
+                        const sr = el.shadowRoot; if (!sr) return;
+                        const anchors = sr.querySelectorAll('a');
+                        anchors.forEach(a => { if ((a.href && a.href.includes('spline.design')) || (a.textContent||'').toLowerCase().includes('spline')) a.style.display = 'none'; });
+                        const wm = sr.querySelector('[part*="watermark"], .watermark, .logo, [data-testid*="watermark"]');
+                        if (wm) wm.style.display = 'none';
+                    } catch {}
+                };
+                hide(); new MutationObserver(hide).observe(el, { childList: true, subtree: true });
+            };
+
+            (async () => {
+                try {
+                    await addScript(reactCdn);
+                    await addScript(reactDomCdn);
+                    let mounted = false;
+                    for (const cdn of splineCdns) {
+                        try {
+                            await addScript(cdn);
+                            mounted = mountReactSpline();
+                            if (mounted) break;
+                        } catch {}
+                    }
+                    if (!mounted) await mountViewerFallback();
+                } catch {
+                    await mountViewerFallback();
+                }
+            })();
         }
     } catch {}
 });

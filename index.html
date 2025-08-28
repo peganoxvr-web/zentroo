@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/howler@2.2.4/dist/howler.core.min.js" defer></script>
     <script type="module" src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"></script>
     <!-- moved to styles.css
     <style>
@@ -952,6 +953,10 @@
   </g>
 </svg></span> مجموعة الألعاب المميزة</h1>
             <div class="header-controls">
+                <span id="playerNameDisplay">👤 ضيف</span>
+                <button id="changeNameBtn" class="theme-btn">✏️ الاسم</button>
+                <button id="statsBtn" class="theme-btn">📊 الإحصائيات</button>
+                <button id="soundToggle" class="theme-btn">🔊 الصوت</button>
                 <button id="themeToggle" class="theme-btn">🌙 الوضع الليلي</button>
                 <button id="homeBtn" class="home-btn hidden">🏠 الرئيسية</button>
             </div>
@@ -966,6 +971,7 @@
         <!-- الصفحة الرئيسية -->
         <section id="home" class="section active">
             <div class="container">
+                <div id="splineMount"></div>
                 <div class="welcome">
                     <h2>مرحباً بك في عالم الألعاب الرائع!</h2>
                     <p>اكتشف مجموعة متنوعة من الألعاب المسلية والتحدي المثير</p>
@@ -1056,20 +1062,19 @@
                         <button class="play-btn">🎮 العب الآن</button>
                     </div>
 
-                    <!-- لعبة 2048 -->
-                    <div class="game-card" data-game="game2048">
+                    <!-- لعبة بريك بريكر -->
+                    <div class="game-card" data-game="breaker">
                         <div class="game-image">
-                            <div class="game-icon">🔢</div>
+                            <div class="game-icon">🧱</div>
                             <div class="game-preview">
-                                <div class="tile">2</div>
-                                <div class="tile">4</div>
-                                <div class="tile">8</div>
-                                <div class="tile">16</div>
+                                <div>🟩🟨🟪</div>
+                                <div>🟦⬜🟧</div>
+                                <div>🟫🟩🟥</div>
                             </div>
                         </div>
                         <div class="game-info">
-                            <h3>لعبة 2048</h3>
-                            <p>ادمج الأرقام للوصول إلى 2048 في تحدي ذهني!</p>
+                            <h3>محطم القرميد</h3>
+                            <p>ارتد الكرة وحطم القرميد واجمع القوى الخاصة!</p>
                             <div class="game-stats">
                                 <span class="difficulty medium">متوسط</span>
                                 <span class="rating">⭐ 4.7</span>
@@ -1166,6 +1171,48 @@
                         </div>
                         <button class="play-btn">🎮 العب الآن</button>
                     </div>
+
+                    <!-- لعبة ضرب الخلد -->
+                    <div class="game-card" data-game="mole">
+                        <div class="game-image">
+                            <div class="game-icon">🐹</div>
+                            <div class="game-preview">
+                                <div>🕳️</div>
+                                <div>🐹</div>
+                                <div>🔨</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>ضرب الخلد</h3>
+                            <p>اضرب الخلد قبل أن يختفي وارفع نقاطك!</p>
+                            <div class="game-stats">
+                                <span class="difficulty easy">سهل</span>
+                                <span class="rating">⭐ 4.3</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
+
+                    <!-- لعبة سيمون -->
+                    <div class="game-card" data-game="simon">
+                        <div class="game-image">
+                            <div class="game-icon">🔵🟢🟡🔴</div>
+                            <div class="game-preview">
+                                <div>🔵</div>
+                                <div>🟢</div>
+                                <div>🟡</div>
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <h3>سيمون</h3>
+                            <p>احفظ التسلسل اللامع وأعده بدقة لرفع مستواك!</p>
+                            <div class="game-stats">
+                                <span class="difficulty medium">متوسط</span>
+                                <span class="rating">⭐ 4.4</span>
+                            </div>
+                        </div>
+                        <button class="play-btn">🎮 العب الآن</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1181,6 +1228,8 @@
                         <div class="level">المستوى: <span id="spaceLevel">1</span></div>
                         <button id="spaceStart" class="control-btn">ابدأ</button>
                         <button id="spacePause" class="control-btn">إيقاف</button>
+                        <button id="spaceRetry" class="control-btn">إعادة المحاولة</button>
+                        <button id="spaceNext" class="control-btn">المرحلة التالية</button>
                     </div>
                 </div>
                 <canvas id="spaceCanvas" width="800" height="600"></canvas>
@@ -1198,7 +1247,9 @@
                     <div class="game-controls">
                         <div class="score">النقاط: <span id="hangmanScore">0</span></div>
                         <div class="lives">المحاولات: <span id="hangmanLives">6</span></div>
+                        <button id="hangmanHint" class="control-btn">تلميح 💡</button>
                         <button id="hangmanReset" class="control-btn">كلمة جديدة</button>
+                        <button id="hangmanRetry" class="control-btn">إعادة المحاولة</button>
                     </div>
                 </div>
                 <div class="word-board">
@@ -1245,8 +1296,11 @@
                     <div class="game-controls">
                         <div class="score">النقاط: <span id="flappyScore">0</span></div>
                         <div class="best">الأفضل: <span id="flappyBest">0</span></div>
+                        <div class="level">المستوى: <span id="flappyLevel">1</span></div>
                         <button id="flappyStart" class="control-btn">ابدأ</button>
                         <button id="flappyPause" class="control-btn">إيقاف</button>
+                        <button id="flappyRetry" class="control-btn">إعادة المحاولة</button>
+                        <button id="flappyNext" class="control-btn">المرحلة التالية</button>
                     </div>
                 </div>
                 <canvas id="flappyCanvas" width="400" height="600"></canvas>
@@ -1256,20 +1310,25 @@
             </div>
         </section>
 
-        <!-- لعبة 2048 -->
-        <section id="game2048" class="section game-section">
+        <!-- لعبة بريك بريكر -->
+        <section id="breaker" class="section game-section">
             <div class="container">
                 <div class="game-header">
-                    <h2>🔢 لعبة 2048</h2>
+                    <h2>🧱 محطم القرميد</h2>
                     <div class="game-controls">
-                        <div class="score">النقاط: <span id="game2048Score">0</span></div>
-                        <div class="best">الأفضل: <span id="game2048Best">0</span></div>
-                        <button id="game2048Reset" class="control-btn">لعبة جديدة</button>
+                        <div class="score">النقاط: <span id="breakerScore">0</span></div>
+                        <div class="lives">الحياة: <span id="breakerLives">3</span></div>
+                        <div class="level">المستوى: <span id="breakerLevel">1</span></div>
+                        <div class="best">الأفضل: <span id="breakerBest">0</span></div>
+                        <button id="breakerStart" class="control-btn">ابدأ</button>
+                        <button id="breakerPause" class="control-btn">إيقاف</button>
+                        <button id="breakerRetry" class="control-btn">إعادة المحاولة</button>
+                        <button id="breakerNext" class="control-btn">المرحلة التالية</button>
                     </div>
                 </div>
-                <div id="game2048Board" class="game2048-board"></div>
+                <canvas id="breakerCanvas" width="700" height="500"></canvas>
                 <div class="game-instructions">
-                    <p><strong>التحكم:</strong> استخدم الأسهم لتحريك البلاطات. ادمج البلاطات المتشابهة للوصول إلى 2048!</p>
+                    <p><strong>التحكم:</strong> استخدم الأسهم للتحكم بالمضرب. اكسر كل القرميد لتتقدم للمستوى التالي، واجمع القوى الخاصة!</p>
                 </div>
             </div>
         </section>
@@ -1301,6 +1360,7 @@
                     <div class="game-controls">
                         <div class="turn">الدور: <span id="currentPlayer">X</span></div>
                         <div class="wins">X: <span id="xWins">0</span> | O: <span id="oWins">0</span></div>
+                        <button id="tttBotToggle" class="control-btn">تفعيل الروبوت 🤖</button>
                         <button id="tictactoeReset" class="control-btn">لعبة جديدة</button>
                     </div>
                 </div>
@@ -1320,9 +1380,12 @@
                     <div class="game-controls">
                         <div class="score">النقاط: <span id="snakeScore">0</span></div>
                         <div class="best">الأفضل: <span id="snakeBest">0</span></div>
+                        <div class="level">المستوى: <span id="snakeLevel">1</span></div>
                         <div class="speed">السرعة: <span id="snakeSpeed">1</span></div>
                         <button id="snakeStart" class="control-btn">ابدأ</button>
                         <button id="snakePause" class="control-btn">إيقاف</button>
+                        <button id="snakeRetry" class="control-btn">إعادة المحاولة</button>
+                        <button id="snakeNext" class="control-btn">المرحلة التالية</button>
                     </div>
                 </div>
                 <canvas id="snakeCanvas" width="400" height="400"></canvas>
@@ -1350,6 +1413,46 @@
                 </div>
             </div>
         </section>
+
+        <!-- لعبة ضرب الخلد -->
+        <section id="mole" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🐹 ضرب الخلد</h2>
+                    <div class="game-controls">
+                        <div class="score">النقاط: <span id="moleScore">0</span></div>
+                        <div class="time">الوقت: <span id="moleTime">30</span>s</div>
+                        <button id="moleStart" class="control-btn">ابدأ</button>
+                        <button id="molePause" class="control-btn">إيقاف</button>
+                        <button id="moleRetry" class="control-btn">إعادة المحاولة</button>
+                        <button id="moleNext" class="control-btn">المرحلة التالية</button>
+                    </div>
+                </div>
+                <div id="moleBoard" class="memory-board"></div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> اضغط على الخلد الذي يظهر عشوائياً قبل أن يختفي. كلما ارتفع المستوى صار أسرع!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- لعبة سيمون -->
+        <section id="simon" class="section game-section">
+            <div class="container">
+                <div class="game-header">
+                    <h2>🔵🟢🟡🔴 سيمون</h2>
+                    <div class="game-controls">
+                        <div class="score">الجولة: <span id="simonRound">1</span></div>
+                        <div class="best">الأفضل: <span id="simonBest">0</span></div>
+                        <button id="simonStart" class="control-btn">ابدأ</button>
+                        <button id="simonRetry" class="control-btn">إعادة المحاولة</button>
+                    </div>
+                </div>
+                <div id="simonBoard" class="memory-board"></div>
+                <div class="game-instructions">
+                    <p><strong>الهدف:</strong> احفظ التسلسل اللامع وأعده. كل جولة يزيد عنصر جديد بالتسلسل.</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="footer">
@@ -1357,6 +1460,19 @@
             <p>© 2024 مجموعة الألعاب المميزة - استمتع بالمغامرة! 🎮✨</p>
         </div>
     </footer>
+
+    <!-- نافذة الإحصائيات -->
+    <div id="statsModal" class="section game-section hidden">
+        <div class="game-header">
+            <h2>📊 إحصائيات اللاعب</h2>
+            <div class="game-controls">
+                <button id="closeStats" class="control-btn">إغلاق</button>
+            </div>
+        </div>
+        <div class="container">
+            <div id="statsContent" class="game-info"></div>
+        </div>
+    </div>
 
     <script src="app.js" defer></script>
 </body>

@@ -47,7 +47,7 @@
 
 body, .header, .game-section, .game-card, 
 .puzzle-board, .tictactoe-board, .memory-board, 
-.game2048-board, .word-board, .game-stats {
+.word-board, .game-stats {
     background-color: inherit;
     color: inherit;
 }
@@ -305,16 +305,23 @@ body::before {
 }
 
 .welcome h2 {
-    font-size: 3rem;
+    font-size: 3.6rem;
     margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    animation: slideInDown 1s ease-out;
+    background: conic-gradient(from 180deg at 50% 50%, #8b5cf6, #22d3ee, #f59e0b, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 18px rgba(139,92,246,0.35), -2px 0 #00eaff, 2px 0 #ff00ff;
+    letter-spacing: 1px;
+    animation: slideInDown 0.9s ease-out, gradientShift 6s linear infinite, neonFlicker 4s ease-in-out infinite;
 }
 
 .welcome p {
-    font-size: 1.3rem;
-    opacity: 0.9;
-    animation: slideInUp 1s ease-out 0.3s both;
+    font-size: 1.35rem;
+    opacity: 0.95;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 10px rgba(34,211,238,0.25);
+    animation: slideInUp 0.9s ease-out 0.15s both;
 }
 
 @keyframes slideInDown {
@@ -325,6 +332,18 @@ body::before {
 @keyframes slideInUp {
     from { transform: translateY(50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes gradientShift {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes neonFlicker {
+    0%, 100% { text-shadow: 0 0 18px rgba(139,92,246,0.35), -2px 0 #00eaff, 2px 0 #ff00ff; }
+    45% { text-shadow: 0 0 26px rgba(139,92,246,0.55), -2px 0 #00eaff, 2px 0 #ff00ff; }
+    46% { text-shadow: 0 0 10px rgba(139,92,246,0.2), -1px 0 #00eaff, 1px 0 #ff00ff; }
+    47% { text-shadow: 0 0 24px rgba(139,92,246,0.5), -2px 0 #00eaff, 2px 0 #ff00ff; }
 }
 
 /* Games Grid */
@@ -689,7 +708,7 @@ canvas:hover {
 }
 
 /* Game Boards */
-.puzzle-board, .tictactoe-board, .memory-board, .game2048-board, .word-board {
+.puzzle-board, .tictactoe-board, .memory-board, .word-board {
     margin: 2rem auto;
     padding: 25px;
     background: var(--light);
@@ -1004,7 +1023,7 @@ canvas:hover {
         height: auto;
     }
     
-    .puzzle-board, .tictactoe-board, .memory-board, .game2048-board, .word-board {
+    .puzzle-board, .tictactoe-board, .memory-board, .word-board {
         max-width: 95%;
         padding: 20px;
     }
@@ -1050,12 +1069,34 @@ canvas:hover {
 [data-theme="dark"] .puzzle-board,
 [data-theme="dark"] .tictactoe-board,
 [data-theme="dark"] .memory-board,
-[data-theme="dark"] .game2048-board,
 [data-theme="dark"] .word-board,
 [data-theme="dark"] .game-stats {
     background: var(--light) !important;
     color: var(--text) !important;
     border-color: var(--border) !important;
+}
+
+/* Moved from inline styles in index.html */
+#splineMount {
+    width: 100%;
+    height: 420px;
+    display: block;
+    background: transparent;
+}
+
+#moleBoard {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+#simonBoard {
+    max-width: 540px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+#statsModal {
+    position: fixed;
+    inset: 10%;
+    z-index: 1000;
 }
 
 /* Fix inner white areas in dark mode */
